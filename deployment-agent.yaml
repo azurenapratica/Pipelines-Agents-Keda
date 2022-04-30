@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: azdevops
+  namespace: devopsagent
+data:
+  AZP_URL: aHR0cHM6Ly9kZXYuYXp1cmUuY29tL2F6dXJlbmFwcmF0aWNh
+  AZP_POOL: UHJpdmF0ZSBQb29s
+  AZP_TOKEN: NXdoZWNjamY3N2tmeWRxenBzcnJ1eXR5Z2V3dXU2azRuZTJrNHgzNTVxdXRmZHY0bWE2YQ==
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: azdevops-deployment
+  namespace: devopsagent
+  labels:
+    app: azdevops-agent
+spec:
+  replicas: 2 #here is the configuration for the actual agent always running
+  selector:
+    matchLabels:
+      app: azdevops-agent
+  template:
+    metadata:
+      labels:
+        app: azdevops-agent
+    spec:
+      containers:
+      - name: azdevops-agent
+        image: miltoncamara/azp-agent-ubuntu:latest
+        env:
+          - name: AZP_URL
+            valueFrom:
+              secretKeyRef:
+                name: azdevops
+                key: AZP_URL
+          - name: AZP_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: azdevops
+                key: AZP_TOKEN
+          - name: AZP_POOL
+            valueFrom:
+              secretKeyRef:
+                name: azdevops
+                key: AZP_POOL
+        volumeMounts:
+        - mountPath: /var/run/docker.sock
+          name: docker-volume
+      volumes:
+      - name: docker-volume
+        hostPath:
+          path: /var/run/docker.sock
